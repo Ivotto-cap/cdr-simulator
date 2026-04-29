@@ -6,7 +6,9 @@ const hotspots = document.querySelectorAll(".hotspot");
 const navButtons = document.querySelectorAll(".scene-nav-button");
 const toggleEditorButton = document.getElementById("toggle-editor");
 const togglePreviewButton = document.getElementById("toggle-preview");
+const placeGianniRandomButton = document.getElementById("place-gianni-random");
 const copyLayoutButton = document.getElementById("copy-layout");
+const seatAnchorElements = document.querySelectorAll(".seat-anchor");
 const characters = document.querySelectorAll(".character");
 const speechBubbles = document.querySelectorAll(".speech-bubble");
 
@@ -63,14 +65,34 @@ const hotspotLayout = {
 
 const characterLayout = {
   "sala-mensa": {
-    nonnogianni: { left: 24.97, top: 34.15, width: 11.51, height: 18.76 }
+    nonnogianni: { left: 48.25, top: 34.24, width: 11.51, height: 18.76 }
   }
 };
 
 const bubbleLayout = {
   "sala-mensa": {
-    nonnogianni: { left: 25.56, top: 22.13, width: 17.37, height: 8.6 }
+    posto1: { left: 24.75, top: 27.21, width: 13.92, height: 7.78 },
+    posto2: { left: 35.32, top: 19.52, width: 15.29, height: 8.6 },
+    posto3: { left: 39.38, top: 28.18, width: 12.88, height: 8.27 },
+    posto4: { left: 49.22, top: 16.58, width: 17.37, height: 8.6 },
+    posto5: { left: 54.96, top: 24.42, width: 14.08, height: 8.6 },
+    posto6: { left: 68.71, top: 23.93, width: 17.37, height: 8.6 }
   }
+};
+
+const seatAnchors = {
+  "sala-mensa": {
+    posto1: { x: 31, y: 53 },
+    posto2: { x: 38.4, y: 53 },
+    posto3: { x: 46, y: 53 },
+    posto4: { x: 54, y: 53 },
+    posto5: { x: 61.6, y: 53 },
+    posto6: { x: 69, y: 53 }
+  }
+};
+
+const characterSeats = {
+  nonnogianni: "posto4"
 };
 
 const nonnoGianniLines = [
@@ -85,6 +107,7 @@ let editorEnabled = false;
 let gamePreviewEnabled = false;
 let interaction = null;
 let activeBubbleId = null;
+let bubbleTimeoutId = null;
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -106,6 +129,10 @@ function getBubbleLayout(sceneId, bubbleId) {
   return bubbleLayout[sceneId]?.[bubbleId];
 }
 
+function getSeatAnchorLayout(sceneId, seatId) {
+  return seatAnchors[sceneId]?.[seatId];
+}
+
 function ensureSceneLayout(sceneId) {
   if (!hotspotLayout[sceneId]) {
     hotspotLayout[sceneId] = {};
@@ -121,6 +148,12 @@ function ensureCharacterSceneLayout(sceneId) {
 function ensureBubbleSceneLayout(sceneId) {
   if (!bubbleLayout[sceneId]) {
     bubbleLayout[sceneId] = {};
+  }
+}
+
+function ensureSeatAnchorSceneLayout(sceneId) {
+  if (!seatAnchors[sceneId]) {
+    seatAnchors[sceneId] = {};
   }
 }
 
@@ -169,6 +202,18 @@ function applyBubbleLayout(bubble, layout) {
   updateBubbleMeta(bubble, layout);
 }
 
+function updateSeatAnchorMeta(seatAnchor, layout) {
+  const label = seatAnchor.querySelector(".seat-anchor-label").textContent;
+  const meta = seatAnchor.querySelector(".seat-anchor-meta");
+  meta.textContent = `${label}\nX ${layout.x}% | Y ${layout.y}%`;
+}
+
+function applySeatAnchorLayout(seatAnchor, layout) {
+  seatAnchor.style.left = `${layout.x}%`;
+  seatAnchor.style.top = `${layout.y}%`;
+  updateSeatAnchorMeta(seatAnchor, layout);
+}
+
 function refreshCharacters() {
   for (const character of characters) {
     const isCurrentScene = character.dataset.scene === currentSceneId;
@@ -192,6 +237,10 @@ function refreshCharacters() {
 
 function hideBubbles() {
   activeBubbleId = null;
+  if (bubbleTimeoutId) {
+    clearTimeout(bubbleTimeoutId);
+    bubbleTimeoutId = null;
+  }
 
   for (const bubble of speechBubbles) {
     bubble.classList.remove("is-visible");
@@ -215,13 +264,30 @@ function refreshBubbles() {
   }
 }
 
+function refreshSeatAnchors() {
+  for (const seatAnchor of seatAnchorElements) {
+    const isCurrentScene = seatAnchor.dataset.scene === currentSceneId;
+    const layout = getSeatAnchorLayout(currentSceneId, seatAnchor.dataset.seatId);
+    const shouldShow = editorEnabled && isCurrentScene;
+
+    seatAnchor.classList.toggle("is-visible", shouldShow && Boolean(layout));
+
+    if (!isCurrentScene || !layout) {
+      continue;
+    }
+
+    applySeatAnchorLayout(seatAnchor, layout);
+  }
+}
+
 function refreshHotspots() {
   for (const hotspot of hotspots) {
+    const isSeatSlot = currentSceneId === "sala-mensa" && hotspot.classList.contains("seat-slot");
     const isCurrentScene = hotspot.dataset.scene === currentSceneId;
-    hotspot.classList.toggle("is-visible", isCurrentScene);
-    hotspot.classList.toggle("is-editor", editorEnabled && isCurrentScene);
+    hotspot.classList.toggle("is-visible", isCurrentScene && !isSeatSlot);
+    hotspot.classList.toggle("is-editor", editorEnabled && isCurrentScene && !isSeatSlot);
 
-    if (!isCurrentScene) {
+    if (!isCurrentScene || isSeatSlot) {
       continue;
     }
 
@@ -258,6 +324,7 @@ function renderScene(sceneId) {
   refreshHotspots();
   refreshCharacters();
   refreshBubbles();
+  refreshSeatAnchors();
 }
 
 function updateEditorState() {
@@ -266,6 +333,7 @@ function updateEditorState() {
   refreshHotspots();
   refreshCharacters();
   refreshBubbles();
+  refreshSeatAnchors();
 }
 
 function updatePreviewState() {
@@ -356,6 +424,27 @@ function startBubbleInteraction(event, bubble, mode) {
   event.preventDefault();
 }
 
+function startSeatAnchorInteraction(event, seatAnchor) {
+  const layout = getSeatAnchorLayout(currentSceneId, seatAnchor.dataset.seatId);
+
+  if (!editorEnabled || !layout) {
+    return;
+  }
+
+  const pointer = pointerToPercent(event);
+  interaction = {
+    type: "seat-anchor",
+    seatAnchor,
+    seatId: seatAnchor.dataset.seatId,
+    pointerLeft: pointer.left,
+    pointerTop: pointer.top,
+    startX: layout.x,
+    startY: layout.y
+  };
+
+  event.preventDefault();
+}
+
 function handlePointerMove(event) {
   if (!interaction) {
     return;
@@ -365,6 +454,8 @@ function handlePointerMove(event) {
     ? getCharacterLayout(currentSceneId, interaction.characterId)
     : interaction.type === "bubble"
       ? getBubbleLayout(currentSceneId, interaction.bubbleId)
+      : interaction.type === "seat-anchor"
+        ? getSeatAnchorLayout(currentSceneId, interaction.seatId)
     : getLayout(currentSceneId, interaction.hotspotId);
 
   if (!layout) {
@@ -374,6 +465,13 @@ function handlePointerMove(event) {
   const pointer = pointerToPercent(event);
   const deltaLeft = pointer.left - interaction.pointerLeft;
   const deltaTop = pointer.top - interaction.pointerTop;
+
+  if (interaction.type === "seat-anchor") {
+    layout.x = roundPercent(clamp(interaction.startX + deltaLeft, 0, 100));
+    layout.y = roundPercent(clamp(interaction.startY + deltaTop, 0, 100));
+    applySeatAnchorLayout(interaction.seatAnchor, layout);
+    return;
+  }
 
   if (interaction.mode === "move") {
     layout.left = roundPercent(clamp(interaction.startLeft + deltaLeft, 0, 100 - layout.width));
@@ -402,6 +500,60 @@ function stopInteraction() {
   interaction = null;
 }
 
+function showNonnoGianniBubble() {
+  const randomLine = nonnoGianniLines[Math.floor(Math.random() * nonnoGianniLines.length)];
+  showSpeechBubbleForCharacter("nonnogianni", randomLine);
+  consoleOutput.textContent = "Nonno Gianni ti guarda in silenzio.";
+}
+
+function showSpeechBubbleForCharacter(characterId, text, duration = 3000) {
+  const seatId = characterSeats[characterId];
+
+  if (!seatId || currentSceneId !== "sala-mensa") {
+    return;
+  }
+
+  const bubble = document.getElementById(`bubble-${seatId}`);
+
+  if (!bubble) {
+    return;
+  }
+
+  if (bubbleTimeoutId) {
+    clearTimeout(bubbleTimeoutId);
+    bubbleTimeoutId = null;
+  }
+
+  bubble.querySelector(".speech-bubble-text").textContent = text;
+  activeBubbleId = seatId;
+  refreshBubbles();
+
+  bubbleTimeoutId = window.setTimeout(() => {
+    if (!editorEnabled) {
+      activeBubbleId = null;
+      refreshBubbles();
+    }
+
+    bubbleTimeoutId = null;
+  }, duration);
+}
+
+function placeCharacterAtSeat(characterId, seatId) {
+  const character = characterLayout["sala-mensa"]?.[characterId];
+  const seat = seatAnchors["sala-mensa"]?.[seatId];
+
+  if (!character || !seat) {
+    return;
+  }
+
+  character.left = roundPercent(seat.x - character.width / 2);
+  character.top = roundPercent(seat.y - character.height);
+  characterSeats[characterId] = seatId;
+
+  refreshCharacters();
+  refreshBubbles();
+}
+
 function handleHotspotClick(event, hotspot) {
   if (editorEnabled) {
     event.preventDefault();
@@ -413,13 +565,7 @@ function handleHotspotClick(event, hotspot) {
     return;
   }
 
-  if (currentSceneId === "sala-mensa" && hotspot.dataset.hotspotId === "posto1") {
-    const bubble = document.getElementById("bubble-nonnogianni");
-    const randomLine = nonnoGianniLines[Math.floor(Math.random() * nonnoGianniLines.length)];
-    bubble.querySelector(".speech-bubble-text").textContent = randomLine;
-    activeBubbleId = "nonnogianni";
-    consoleOutput.textContent = "Nonno Gianni ti guarda in silenzio.";
-    refreshBubbles();
+  if (currentSceneId === "sala-mensa" && hotspot.classList.contains("seat-slot")) {
     return;
   }
 
@@ -431,7 +577,9 @@ async function copyLayout() {
   const json = JSON.stringify({
     hotspotLayout,
     characterLayout,
-    bubbleLayout
+    bubbleLayout,
+    seatAnchors,
+    characterSeats
   }, null, 2);
 
   try {
@@ -458,6 +606,17 @@ for (const hotspot of hotspots) {
 }
 
 for (const character of characters) {
+  character.addEventListener("click", (event) => {
+    if (editorEnabled) {
+      event.preventDefault();
+      return;
+    }
+
+    if (currentSceneId === "sala-mensa" && character.dataset.characterId === "nonnogianni") {
+      showNonnoGianniBubble();
+    }
+  });
+
   character.addEventListener("pointerdown", (event) => {
     if (event.button !== 0) {
       return;
@@ -476,6 +635,16 @@ for (const bubble of speechBubbles) {
 
     const isResizeHandle = event.target.classList.contains("speech-bubble-resize");
     startBubbleInteraction(event, bubble, isResizeHandle ? "resize" : "move");
+  });
+}
+
+for (const seatAnchor of seatAnchorElements) {
+  seatAnchor.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) {
+      return;
+    }
+
+    startSeatAnchorInteraction(event, seatAnchor);
   });
 }
 
@@ -498,6 +667,18 @@ togglePreviewButton.addEventListener("click", () => {
   updatePreviewState();
 });
 
+placeGianniRandomButton.addEventListener("click", () => {
+  const seatIds = Object.keys(seatAnchors["sala-mensa"] || {});
+
+  if (seatIds.length === 0) {
+    return;
+  }
+
+  const randomSeatId = seatIds[Math.floor(Math.random() * seatIds.length)];
+  placeCharacterAtSeat("nonnogianni", randomSeatId);
+  consoleOutput.textContent = `Nonno Gianni spostato su ${randomSeatId}.`;
+});
+
 copyLayoutButton.addEventListener("click", () => {
   copyLayout();
 });
@@ -516,6 +697,10 @@ for (const character of characters) {
 
 for (const bubble of speechBubbles) {
   ensureBubbleSceneLayout(bubble.dataset.scene);
+}
+
+for (const seatAnchor of seatAnchorElements) {
+  ensureSeatAnchorSceneLayout(seatAnchor.dataset.scene);
 }
 
 renderScene("reception");

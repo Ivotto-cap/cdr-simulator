@@ -227,7 +227,8 @@ body {
   position: absolute;
   z-index: 1;
   display: none;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 .character.is-visible {
@@ -235,7 +236,7 @@ body {
 }
 
 .character.is-editor {
-  pointer-events: auto;
+  cursor: move;
   border: 2px dashed #234f7d;
   background: rgba(226, 240, 255, 0.2);
   box-shadow: 0 0 0 2px rgba(35, 79, 125, 0.16);
@@ -380,6 +381,50 @@ body {
   display: block;
 }
 
+.seat-anchor {
+  position: absolute;
+  z-index: 3;
+  display: none;
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+  margin-top: -9px;
+  border: 2px solid #7a1f1f;
+  border-radius: 999px;
+  background: rgba(255, 241, 204, 0.96);
+  box-shadow: 0 0 0 2px rgba(122, 31, 31, 0.16);
+  cursor: move;
+}
+
+.seat-anchor.is-visible {
+  display: block;
+}
+
+.seat-anchor-label,
+.seat-anchor-meta {
+  position: absolute;
+  left: 16px;
+  display: block;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #7a1f1f;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  border: 1px solid rgba(122, 31, 31, 0.45);
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.seat-anchor-label {
+  top: -10px;
+  font-weight: 700;
+}
+
+.seat-anchor-meta {
+  top: 14px;
+}
+
 .seat-slot:not(.is-editor) {
   border-color: transparent;
   background: transparent;
@@ -430,6 +475,7 @@ body.game-preview .hotspot {
 body.game-preview .hotspot-label,
 body.game-preview .hotspot-meta,
 body.game-preview .hotspot-resize,
+body.game-preview .seat-anchor,
 body.game-preview .character-label,
 body.game-preview .character-meta,
 body.game-preview .character-resize,
