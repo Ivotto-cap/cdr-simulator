@@ -295,6 +295,91 @@ body {
   display: block;
 }
 
+.speech-bubble {
+  position: absolute;
+  z-index: 4;
+  display: none;
+  padding: 10px 14px;
+  border: 2px solid #3f342a;
+  border-radius: 18px;
+  background: rgba(255, 250, 238, 0.98);
+  color: #111111;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+  pointer-events: none;
+}
+
+.speech-bubble.is-visible {
+  display: block;
+}
+
+.speech-bubble.is-editor {
+  pointer-events: auto;
+  box-shadow: 0 0 0 2px rgba(88, 65, 35, 0.18);
+}
+
+.speech-bubble-label,
+.speech-bubble-meta {
+  display: none;
+  position: absolute;
+  left: 8px;
+  z-index: 1;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #3f342a;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  border: 1px solid rgba(63, 52, 42, 0.45);
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.speech-bubble-label {
+  top: 8px;
+  font-weight: 700;
+}
+
+.speech-bubble-meta {
+  top: 32px;
+  white-space: pre-line;
+}
+
+.speech-bubble-text {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.speech-bubble-tail {
+  position: absolute;
+  left: 18%;
+  bottom: -14px;
+  width: 18px;
+  height: 18px;
+  background: rgba(255, 250, 238, 0.98);
+  border-right: 2px solid #3f342a;
+  border-bottom: 2px solid #3f342a;
+  transform: rotate(45deg);
+}
+
+.speech-bubble-resize {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: #3f342a;
+  border: 1px solid #ffffff;
+  cursor: nwse-resize;
+  display: none;
+}
+
+.speech-bubble.is-editor .speech-bubble-label,
+.speech-bubble.is-editor .speech-bubble-meta,
+.speech-bubble.is-editor .speech-bubble-resize {
+  display: block;
+}
+
 .seat-slot:not(.is-editor) {
   border-color: transparent;
   background: transparent;
@@ -332,4 +417,34 @@ body {
   margin: 0;
   min-height: 24px;
   line-height: 1.5;
+}
+
+body.game-preview .hotspot {
+  border-color: transparent;
+  background: transparent;
+  color: transparent;
+  box-shadow: none;
+  outline: none;
+}
+
+body.game-preview .hotspot-label,
+body.game-preview .hotspot-meta,
+body.game-preview .hotspot-resize,
+body.game-preview .character-label,
+body.game-preview .character-meta,
+body.game-preview .character-resize,
+body.game-preview .speech-bubble-label,
+body.game-preview .speech-bubble-meta,
+body.game-preview .speech-bubble-resize {
+  display: none !important;
+}
+
+body.game-preview .character {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+body.game-preview .speech-bubble {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
 }

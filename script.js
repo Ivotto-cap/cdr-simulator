@@ -5,8 +5,10 @@ const consoleOutput = document.getElementById("console-output");
 const hotspots = document.querySelectorAll(".hotspot");
 const navButtons = document.querySelectorAll(".scene-nav-button");
 const toggleEditorButton = document.getElementById("toggle-editor");
+const togglePreviewButton = document.getElementById("toggle-preview");
 const copyLayoutButton = document.getElementById("copy-layout");
 const characters = document.querySelectorAll(".character");
+const speechBubbles = document.querySelectorAll(".speech-bubble");
 
 const scenes = {
   reception: {
@@ -61,13 +63,28 @@ const hotspotLayout = {
 
 const characterLayout = {
   "sala-mensa": {
-    nonnogianni: { left: 18, top: 30, width: 20, height: 40 }
+    nonnogianni: { left: 24.97, top: 34.15, width: 11.51, height: 18.76 }
   }
 };
 
+const bubbleLayout = {
+  "sala-mensa": {
+    nonnogianni: { left: 25.56, top: 22.13, width: 17.37, height: 8.6 }
+  }
+};
+
+const nonnoGianniLines = [
+  "vorrei una zuppa.",
+  "che schifo l'aceto.",
+  "passami la lavatrice",
+  "prendi l'ascia"
+];
+
 let currentSceneId = "reception";
 let editorEnabled = false;
+let gamePreviewEnabled = false;
 let interaction = null;
+let activeBubbleId = null;
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -85,6 +102,10 @@ function getCharacterLayout(sceneId, characterId) {
   return characterLayout[sceneId]?.[characterId];
 }
 
+function getBubbleLayout(sceneId, bubbleId) {
+  return bubbleLayout[sceneId]?.[bubbleId];
+}
+
 function ensureSceneLayout(sceneId) {
   if (!hotspotLayout[sceneId]) {
     hotspotLayout[sceneId] = {};
@@ -94,6 +115,12 @@ function ensureSceneLayout(sceneId) {
 function ensureCharacterSceneLayout(sceneId) {
   if (!characterLayout[sceneId]) {
     characterLayout[sceneId] = {};
+  }
+}
+
+function ensureBubbleSceneLayout(sceneId) {
+  if (!bubbleLayout[sceneId]) {
+    bubbleLayout[sceneId] = {};
   }
 }
 
@@ -128,6 +155,20 @@ function applyCharacterLayout(character, layout) {
   updateCharacterMeta(character, layout);
 }
 
+function updateBubbleMeta(bubble, layout) {
+  const meta = bubble.querySelector(".speech-bubble-meta");
+  const label = bubble.querySelector(".speech-bubble-label").textContent;
+  meta.textContent = formatLayoutText(label, layout);
+}
+
+function applyBubbleLayout(bubble, layout) {
+  bubble.style.left = `${layout.left}%`;
+  bubble.style.top = `${layout.top}%`;
+  bubble.style.width = `${layout.width}%`;
+  bubble.style.height = `${layout.height}%`;
+  updateBubbleMeta(bubble, layout);
+}
+
 function refreshCharacters() {
   for (const character of characters) {
     const isCurrentScene = character.dataset.scene === currentSceneId;
@@ -146,6 +187,31 @@ function refreshCharacters() {
     }
 
     applyCharacterLayout(character, layout);
+  }
+}
+
+function hideBubbles() {
+  activeBubbleId = null;
+
+  for (const bubble of speechBubbles) {
+    bubble.classList.remove("is-visible");
+  }
+}
+
+function refreshBubbles() {
+  for (const bubble of speechBubbles) {
+    const isCurrentScene = bubble.dataset.scene === currentSceneId;
+    const layout = getBubbleLayout(currentSceneId, bubble.dataset.bubbleId);
+    const shouldShow = isCurrentScene && (editorEnabled || activeBubbleId === bubble.dataset.bubbleId);
+
+    bubble.classList.toggle("is-visible", shouldShow && Boolean(layout));
+    bubble.classList.toggle("is-editor", editorEnabled && isCurrentScene);
+
+    if (!isCurrentScene || !layout) {
+      continue;
+    }
+
+    applyBubbleLayout(bubble, layout);
   }
 }
 
@@ -178,6 +244,7 @@ function renderScene(sceneId) {
   }
 
   currentSceneId = sceneId;
+  hideBubbles();
   game.dataset.scene = sceneId;
   sceneElement.setAttribute("aria-label", scene.label);
   roomName.textContent = scene.label;
@@ -190,6 +257,7 @@ function renderScene(sceneId) {
 
   refreshHotspots();
   refreshCharacters();
+  refreshBubbles();
 }
 
 function updateEditorState() {
@@ -197,6 +265,14 @@ function updateEditorState() {
   toggleEditorButton.setAttribute("aria-pressed", String(editorEnabled));
   refreshHotspots();
   refreshCharacters();
+  refreshBubbles();
+}
+
+function updatePreviewState() {
+  document.body.classList.toggle("game-preview", gamePreviewEnabled);
+  togglePreviewButton.classList.toggle("is-active", gamePreviewEnabled);
+  togglePreviewButton.setAttribute("aria-pressed", String(gamePreviewEnabled));
+  togglePreviewButton.textContent = gamePreviewEnabled ? "Vista Editor" : "Vista Gioco";
 }
 
 function pointerToPercent(event) {
@@ -256,6 +332,30 @@ function startCharacterInteraction(event, character, mode) {
   event.preventDefault();
 }
 
+function startBubbleInteraction(event, bubble, mode) {
+  const layout = getBubbleLayout(currentSceneId, bubble.dataset.bubbleId);
+
+  if (!editorEnabled || !layout) {
+    return;
+  }
+
+  const pointer = pointerToPercent(event);
+  interaction = {
+    type: "bubble",
+    bubble,
+    bubbleId: bubble.dataset.bubbleId,
+    mode,
+    startLeft: layout.left,
+    startTop: layout.top,
+    startWidth: layout.width,
+    startHeight: layout.height,
+    pointerLeft: pointer.left,
+    pointerTop: pointer.top
+  };
+
+  event.preventDefault();
+}
+
 function handlePointerMove(event) {
   if (!interaction) {
     return;
@@ -263,6 +363,8 @@ function handlePointerMove(event) {
 
   const layout = interaction.type === "character"
     ? getCharacterLayout(currentSceneId, interaction.characterId)
+    : interaction.type === "bubble"
+      ? getBubbleLayout(currentSceneId, interaction.bubbleId)
     : getLayout(currentSceneId, interaction.hotspotId);
 
   if (!layout) {
@@ -288,6 +390,11 @@ function handlePointerMove(event) {
     return;
   }
 
+  if (interaction.type === "bubble") {
+    applyBubbleLayout(interaction.bubble, layout);
+    return;
+  }
+
   applyHotspotLayout(interaction.hotspot, layout);
 }
 
@@ -307,7 +414,12 @@ function handleHotspotClick(event, hotspot) {
   }
 
   if (currentSceneId === "sala-mensa" && hotspot.dataset.hotspotId === "posto1") {
+    const bubble = document.getElementById("bubble-nonnogianni");
+    const randomLine = nonnoGianniLines[Math.floor(Math.random() * nonnoGianniLines.length)];
+    bubble.querySelector(".speech-bubble-text").textContent = randomLine;
+    activeBubbleId = "nonnogianni";
     consoleOutput.textContent = "Nonno Gianni ti guarda in silenzio.";
+    refreshBubbles();
     return;
   }
 
@@ -318,7 +430,8 @@ function handleHotspotClick(event, hotspot) {
 async function copyLayout() {
   const json = JSON.stringify({
     hotspotLayout,
-    characterLayout
+    characterLayout,
+    bubbleLayout
   }, null, 2);
 
   try {
@@ -355,6 +468,17 @@ for (const character of characters) {
   });
 }
 
+for (const bubble of speechBubbles) {
+  bubble.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) {
+      return;
+    }
+
+    const isResizeHandle = event.target.classList.contains("speech-bubble-resize");
+    startBubbleInteraction(event, bubble, isResizeHandle ? "resize" : "move");
+  });
+}
+
 for (const navButton of navButtons) {
   navButton.addEventListener("click", () => {
     renderScene(navButton.dataset.navTarget);
@@ -367,6 +491,11 @@ toggleEditorButton.addEventListener("click", () => {
   consoleOutput.textContent = editorEnabled
     ? "Editor hotspot attivo. Trascina o ridimensiona le aree della scena corrente."
     : scenes[currentSceneId].message;
+});
+
+togglePreviewButton.addEventListener("click", () => {
+  gamePreviewEnabled = !gamePreviewEnabled;
+  updatePreviewState();
 });
 
 copyLayoutButton.addEventListener("click", () => {
@@ -385,5 +514,10 @@ for (const character of characters) {
   ensureCharacterSceneLayout(character.dataset.scene);
 }
 
+for (const bubble of speechBubbles) {
+  ensureBubbleSceneLayout(bubble.dataset.scene);
+}
+
 renderScene("reception");
 updateEditorState();
+updatePreviewState();
