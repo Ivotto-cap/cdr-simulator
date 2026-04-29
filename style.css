@@ -223,6 +223,78 @@ body {
   color: #123c39;
 }
 
+.character {
+  position: absolute;
+  z-index: 1;
+  display: none;
+  pointer-events: none;
+}
+
+.character.is-visible {
+  display: block;
+}
+
+.character.is-editor {
+  pointer-events: auto;
+  border: 2px dashed #234f7d;
+  background: rgba(226, 240, 255, 0.2);
+  box-shadow: 0 0 0 2px rgba(35, 79, 125, 0.16);
+}
+
+.character img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  pointer-events: none;
+}
+
+.character-label,
+.character-meta {
+  position: absolute;
+  left: 6px;
+  z-index: 1;
+  display: none;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #183252;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  border: 1px solid rgba(35, 79, 125, 0.45);
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.character-label {
+  top: 6px;
+  font-weight: 700;
+}
+
+.character-meta {
+  top: 30px;
+  white-space: pre-line;
+}
+
+.character-resize {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: #183252;
+  border: 1px solid #ffffff;
+  cursor: nwse-resize;
+  display: none;
+}
+
+.character.is-editor .character-label,
+.character.is-editor .character-meta,
+.character.is-editor .character-resize {
+  display: block;
+}
+
 .seat-slot:not(.is-editor) {
   border-color: transparent;
   background: transparent;

@@ -6,6 +6,7 @@ const hotspots = document.querySelectorAll(".hotspot");
 const navButtons = document.querySelectorAll(".scene-nav-button");
 const toggleEditorButton = document.getElementById("toggle-editor");
 const copyLayoutButton = document.getElementById("copy-layout");
+const characters = document.querySelectorAll(".character");
 
 const scenes = {
   reception: {
@@ -58,6 +59,12 @@ const hotspotLayout = {
   }
 };
 
+const characterLayout = {
+  "sala-mensa": {
+    nonnogianni: { left: 18, top: 30, width: 20, height: 40 }
+  }
+};
+
 let currentSceneId = "reception";
 let editorEnabled = false;
 let interaction = null;
@@ -74,9 +81,19 @@ function getLayout(sceneId, hotspotId) {
   return hotspotLayout[sceneId]?.[hotspotId];
 }
 
+function getCharacterLayout(sceneId, characterId) {
+  return characterLayout[sceneId]?.[characterId];
+}
+
 function ensureSceneLayout(sceneId) {
   if (!hotspotLayout[sceneId]) {
     hotspotLayout[sceneId] = {};
+  }
+}
+
+function ensureCharacterSceneLayout(sceneId) {
+  if (!characterLayout[sceneId]) {
+    characterLayout[sceneId] = {};
   }
 }
 
@@ -95,6 +112,41 @@ function applyHotspotLayout(hotspot, layout) {
   hotspot.style.width = `${layout.width}%`;
   hotspot.style.height = `${layout.height}%`;
   updateHotspotMeta(hotspot, layout);
+}
+
+function updateCharacterMeta(character, layout) {
+  const meta = character.querySelector(".character-meta");
+  const label = character.querySelector(".character-label").textContent;
+  meta.textContent = formatLayoutText(label, layout);
+}
+
+function applyCharacterLayout(character, layout) {
+  character.style.left = `${layout.left}%`;
+  character.style.top = `${layout.top}%`;
+  character.style.width = `${layout.width}%`;
+  character.style.height = `${layout.height}%`;
+  updateCharacterMeta(character, layout);
+}
+
+function refreshCharacters() {
+  for (const character of characters) {
+    const isCurrentScene = character.dataset.scene === currentSceneId;
+    character.classList.toggle("is-visible", isCurrentScene);
+    character.classList.toggle("is-editor", editorEnabled && isCurrentScene);
+
+    if (!isCurrentScene) {
+      continue;
+    }
+
+    const layout = getCharacterLayout(currentSceneId, character.dataset.characterId);
+
+    if (!layout) {
+      character.classList.remove("is-visible");
+      continue;
+    }
+
+    applyCharacterLayout(character, layout);
+  }
 }
 
 function refreshHotspots() {
@@ -137,12 +189,14 @@ function renderScene(sceneId) {
   }
 
   refreshHotspots();
+  refreshCharacters();
 }
 
 function updateEditorState() {
   toggleEditorButton.classList.toggle("is-active", editorEnabled);
   toggleEditorButton.setAttribute("aria-pressed", String(editorEnabled));
   refreshHotspots();
+  refreshCharacters();
 }
 
 function pointerToPercent(event) {
@@ -178,12 +232,38 @@ function startInteraction(event, hotspot, mode) {
   event.preventDefault();
 }
 
+function startCharacterInteraction(event, character, mode) {
+  const layout = getCharacterLayout(currentSceneId, character.dataset.characterId);
+
+  if (!editorEnabled || !layout) {
+    return;
+  }
+
+  const pointer = pointerToPercent(event);
+  interaction = {
+    type: "character",
+    character,
+    characterId: character.dataset.characterId,
+    mode,
+    startLeft: layout.left,
+    startTop: layout.top,
+    startWidth: layout.width,
+    startHeight: layout.height,
+    pointerLeft: pointer.left,
+    pointerTop: pointer.top
+  };
+
+  event.preventDefault();
+}
+
 function handlePointerMove(event) {
   if (!interaction) {
     return;
   }
 
-  const layout = getLayout(currentSceneId, interaction.hotspotId);
+  const layout = interaction.type === "character"
+    ? getCharacterLayout(currentSceneId, interaction.characterId)
+    : getLayout(currentSceneId, interaction.hotspotId);
 
   if (!layout) {
     return;
@@ -201,6 +281,11 @@ function handlePointerMove(event) {
   if (interaction.mode === "resize") {
     layout.width = roundPercent(clamp(interaction.startWidth + deltaLeft, 4, 100 - interaction.startLeft));
     layout.height = roundPercent(clamp(interaction.startHeight + deltaTop, 4, 100 - interaction.startTop));
+  }
+
+  if (interaction.type === "character") {
+    applyCharacterLayout(interaction.character, layout);
+    return;
   }
 
   applyHotspotLayout(interaction.hotspot, layout);
@@ -221,12 +306,20 @@ function handleHotspotClick(event, hotspot) {
     return;
   }
 
+  if (currentSceneId === "sala-mensa" && hotspot.dataset.hotspotId === "posto1") {
+    consoleOutput.textContent = "Nonno Gianni ti guarda in silenzio.";
+    return;
+  }
+
   const message = hotspot.dataset.message || "Nessun messaggio disponibile.";
   consoleOutput.textContent = message;
 }
 
 async function copyLayout() {
-  const json = JSON.stringify(hotspotLayout, null, 2);
+  const json = JSON.stringify({
+    hotspotLayout,
+    characterLayout
+  }, null, 2);
 
   try {
     await navigator.clipboard.writeText(json);
@@ -248,6 +341,17 @@ for (const hotspot of hotspots) {
 
     const isResizeHandle = event.target.classList.contains("hotspot-resize");
     startInteraction(event, hotspot, isResizeHandle ? "resize" : "move");
+  });
+}
+
+for (const character of characters) {
+  character.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) {
+      return;
+    }
+
+    const isResizeHandle = event.target.classList.contains("character-resize");
+    startCharacterInteraction(event, character, isResizeHandle ? "resize" : "move");
   });
 }
 
@@ -275,6 +379,10 @@ window.addEventListener("pointercancel", stopInteraction);
 
 for (const hotspot of hotspots) {
   ensureSceneLayout(hotspot.dataset.scene);
+}
+
+for (const character of characters) {
+  ensureCharacterSceneLayout(character.dataset.scene);
 }
 
 renderScene("reception");
