@@ -32,11 +32,11 @@ const scenes = {
 
 const hotspotLayout = {
   reception: {
-    telefono: { left: 35, top: 60, width: 13, height: 16 },
-    camere: { left: 69, top: 18, width: 12, height: 32 },
-    infermeria: { left: 78, top: 56, width: 14, height: 28 },
-    "sala-ricreativa": { left: 49, top: 14, width: 10, height: 28 },
-    "sala-mensa": { left: 62, top: 16, width: 11, height: 28 }
+    telefono: { left: 14.41, top: 67.18, width: 11.88, height: 24.5 },
+    camere: { left: 59.71, top: 25.84, width: 11.36, height: 4 },
+    infermeria: { left: 26.32, top: 10.9, width: 7.51, height: 36.17 },
+    "sala-ricreativa": { left: 60.69, top: 18.42, width: 8.48, height: 4 },
+    "sala-mensa": { left: 60.88, top: 11.42, width: 8.28, height: 4.33 }
   },
   infermeria: {
     back: { left: 38, top: 36, width: 24, height: 14 }
@@ -49,12 +49,12 @@ const hotspotLayout = {
   },
   "sala-mensa": {
     back: { left: 4, top: 10, width: 18, height: 10 },
-    posto1: { left: 18, top: 44, width: 8, height: 10 },
-    posto2: { left: 31, top: 44, width: 8, height: 10 },
-    posto3: { left: 44, top: 44, width: 8, height: 10 },
-    posto4: { left: 57, top: 44, width: 8, height: 10 },
-    posto5: { left: 70, top: 44, width: 8, height: 10 },
-    posto6: { left: 83, top: 44, width: 8, height: 10 }
+    posto1: { left: 28.98, top: 42.53, width: 4.32, height: 10.16 },
+    posto2: { left: 36.21, top: 42.85, width: 4.71, height: 9.83 },
+    posto3: { left: 43.68, top: 42.36, width: 4.56, height: 10 },
+    posto4: { left: 51.71, top: 42.37, width: 4.24, height: 10.17 },
+    posto5: { left: 59.58, top: 43.18, width: 4, height: 9.02 },
+    posto6: { left: 66.49, top: 42.86, width: 4.48, height: 9.35 }
   }
 };
 
