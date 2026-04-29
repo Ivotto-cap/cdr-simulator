@@ -12,44 +12,49 @@ const scenes = {
     label: "Reception",
     message: "Sei alla reception. Da qui puoi raggiungere le altre stanze."
   },
-  stanze: {
-    label: "Stanze",
-    message: "Sei nella zona stanze. Per ora tutto sembra calmo."
+  camere: {
+    label: "Camere",
+    message: "Sei nella zona camere. Per ora tutto sembra calmo."
   },
   infermeria: {
     label: "Infermeria",
     message: "Sei in infermeria. L'ambiente e' tranquillo e in ordine."
   },
-  salone: {
-    label: "Salone",
-    message: "Sei nel salone. Si sente un brusio lontano."
+  "sala-ricreativa": {
+    label: "Sala Ricreativa",
+    message: "Sei nella sala ricreativa. Si sente un brusio lontano."
   },
-  "sala-pranzo": {
-    label: "Sala Pranzo",
-    message: "Sei in sala pranzo. Nell'aria c'e' ancora odore di caffe'."
+  "sala-mensa": {
+    label: "Sala Mensa",
+    message: "Sei nella sala mensa. Nell'aria c'e' ancora odore di caffe'."
   }
 };
 
 const hotspotLayout = {
   reception: {
-    campanello: { left: 9, top: 63, width: 10, height: 18 },
     telefono: { left: 35, top: 60, width: 13, height: 16 },
-    stanze: { left: 69, top: 18, width: 12, height: 32 },
+    camere: { left: 69, top: 18, width: 12, height: 32 },
     infermeria: { left: 78, top: 56, width: 14, height: 28 },
-    salone: { left: 49, top: 14, width: 10, height: 28 },
-    "sala-pranzo": { left: 62, top: 16, width: 11, height: 28 }
+    "sala-ricreativa": { left: 49, top: 14, width: 10, height: 28 },
+    "sala-mensa": { left: 62, top: 16, width: 11, height: 28 }
   },
   infermeria: {
     back: { left: 38, top: 36, width: 24, height: 14 }
   },
-  stanze: {
+  camere: {
     back: { left: 38, top: 36, width: 24, height: 14 }
   },
-  salone: {
+  "sala-ricreativa": {
     back: { left: 38, top: 36, width: 24, height: 14 }
   },
-  "sala-pranzo": {
-    back: { left: 38, top: 36, width: 24, height: 14 }
+  "sala-mensa": {
+    back: { left: 4, top: 10, width: 18, height: 10 },
+    posto1: { left: 18, top: 44, width: 8, height: 10 },
+    posto2: { left: 31, top: 44, width: 8, height: 10 },
+    posto3: { left: 44, top: 44, width: 8, height: 10 },
+    posto4: { left: 57, top: 44, width: 8, height: 10 },
+    posto5: { left: 70, top: 44, width: 8, height: 10 },
+    posto6: { left: 83, top: 44, width: 8, height: 10 }
   }
 };
 

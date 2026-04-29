@@ -13,6 +13,13 @@ body {
   color: #2d241b;
 }
 
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
 #game {
   position: relative;
   width: 1280px;
@@ -30,7 +37,7 @@ body {
   background-color: #cbb69e;
 }
 
-#game[data-scene="stanze"] {
+#game[data-scene="camere"] {
   background-image:
     linear-gradient(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.12)),
     linear-gradient(135deg, #b29e84 0%, #8f7b63 100%);
@@ -42,32 +49,33 @@ body {
     linear-gradient(135deg, #bfd8d1 0%, #8fb4ac 100%);
 }
 
-#game[data-scene="salone"] {
+#game[data-scene="sala-ricreativa"] {
   background-image:
     linear-gradient(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.08)),
     linear-gradient(135deg, #c7b2a1 0%, #9f8068 100%);
 }
 
-#game[data-scene="sala-pranzo"] {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06)),
-    linear-gradient(135deg, #d8c69d 0%, #b69157 100%);
+#game[data-scene="sala-mensa"] {
+  background-image: url("assets/img/sala mensa.png");
+  background-color: #d8c69d;
 }
 
 .header {
   position: relative;
   z-index: 3;
-  text-align: center;
-}
-
-.header h1 {
-  margin: 0;
-  font-size: clamp(2rem, 4vw, 3rem);
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: none;
 }
 
 .room-name {
-  margin: 8px 0 0;
-  font-size: 1rem;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(46, 38, 31, 0.88);
+  color: #f9f1e2;
+  font-size: 0.9rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -75,15 +83,22 @@ body {
 .scene {
   position: relative;
   width: 100%;
-  height: 500px;
+  height: 612px;
   margin-top: 12px;
 }
 
+#dev-controls {
+  width: 1280px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(255, 247, 235, 0.94);
+  box-shadow: 0 10px 30px rgba(45, 36, 27, 0.12);
+}
+
 .dev-toolbar {
-  position: relative;
-  z-index: 3;
   display: flex;
   justify-content: center;
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: 12px;
 }
@@ -107,13 +122,11 @@ body {
 }
 
 .scene-nav {
-  position: relative;
-  z-index: 3;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
-  margin-top: 16px;
+  margin-top: 0;
 }
 
 .scene-nav-button {
@@ -208,6 +221,20 @@ body {
   border-color: #0f5f59;
   background: rgba(204, 247, 242, 0.82);
   color: #123c39;
+}
+
+.seat-slot:not(.is-editor) {
+  border-color: transparent;
+  background: transparent;
+  color: transparent;
+  box-shadow: none;
+}
+
+.seat-slot:not(.is-editor):hover,
+.seat-slot:not(.is-editor):focus-visible {
+  border-color: transparent;
+  background: transparent;
+  outline: none;
 }
 
 .console {
