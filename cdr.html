@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CDR Simulator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="game">
+    <header class="header">
+      <h1>CDR Simulator</h1>
+      <p class="room-name" id="room-name">Reception</p>
+    </header>
+
+    <nav class="scene-nav" aria-label="Navigazione scene">
+      <button class="scene-nav-button" type="button" data-nav-target="reception">Reception</button>
+      <button class="scene-nav-button" type="button" data-nav-target="infermeria">Infermeria</button>
+      <button class="scene-nav-button" type="button" data-nav-target="stanze">Stanze</button>
+      <button class="scene-nav-button" type="button" data-nav-target="salone">Salone</button>
+      <button class="scene-nav-button" type="button" data-nav-target="sala-pranzo">Sala Pranzo</button>
+    </nav>
+
+    <div class="dev-toolbar">
+      <button class="dev-button" id="toggle-editor" type="button" aria-pressed="false">Editor Hotspot</button>
+      <button class="dev-button" id="copy-layout" type="button">Copia layout</button>
+    </div>
+
+    <section class="scene" id="scene" aria-label="Reception">
+      <button class="hotspot" id="hotspot-campanello" type="button" data-scene="reception" data-hotspot-id="campanello" data-label="Campanello" data-action="message" data-message="Hai suonato il campanello. Qualcuno si avvicina con molta calma." aria-label="Campanello">
+        <span class="hotspot-label">Campanello</span>
+        <span class="hotspot-meta"></span>
+        <span class="hotspot-resize" aria-hidden="true"></span>
+      </button>
+
+      <button class="hotspot" id="hotspot-telefono" type="button" data-scene="reception" data-hotspot-id="telefono" data-label="Telefono" data-action="message" data-message="Hai preso il telefono. Dall'altra parte senti un lungo sbadiglio." aria-label="Telefono">
+        <span class="hotspot-label">Telefono</span>
+        <span class="hotspot-meta"></span>
+        <span class="hotspot-resize" aria-hidden="true"></span>
+      </button>
+
+      <button class="hotspot" id="hotspot-stanze" type="button" data-scene="reception" data-hotspot-id="stanze" data-label="Porta Stanze" data-action="change-scene" data-target="stanze" aria-label="Vai alle stanze">
+        <span class="hotspot-label">Porta Stanze</span>
+        <span class="hotspot-meta"></span>
+        <span class="hotspot-resize" aria-hidden="true"></span>
+      </button>
+
+      <button class="hotspot" id="hotspot-infermeria" type="button" data-scene="reception" data-hotspot-id="infermeria" data-label="Porta Infermeria" data-action="change-scene" data-target="infermeria" aria-label="Vai in infermeria">
+        <span class="hotspot-label">Porta Infermeria</span>
+        <span class="hotspot-meta"></span>
+        <span class="hotspot-resize" aria-hidden="true"></span>
+      </button>
+
+      <button class="hotspot" id="hotspot-salone" type="button" data-scene="reception" data-hotspot-id="salone" data-label="Porta Salone" data-action="change-scene" data-target="salone" aria-label="Vai in salone">
+        <span class="hotspot-label">Porta Salone</span>
+        <span class="hotspot-meta"></span>
+        <span class="hotspot-resize" aria-hidden="true"></span>
+      </button>
+
+      <button class="hotspot" id="hotspot-sala-pranzo" type="button" data-scene="reception" data-hotspot-id="sala-pranzo" data-label="Porta Sala Pranzo" data-action="change-scene" data-target="sala-pranzo" aria-label="Vai in sala pranzo">
+        <span class="hotspot-label">Porta Sala Pranzo</span>
+        <span class="hotspot-meta"></span>
+        <span class="hotspot-resize" aria-hidden="true"></span>
+      </button>
+
+      <button class="hotspot" id="hotspot-back-infermeria" type="button" data-scene="infermeria" data-hotspot-id="back" data-label="Torna alla Reception" data-action="change-scene" data-target="reception" aria-label="Torna alla reception">
+        <span class="hotspot-label">Torna alla Reception</span>
+        <span class="hotspot-meta"></span>
+        <span class="hotspot-resize" aria-hidden="true"></span>
+      </button>
+
+      <button class="hotspot" id="hotspot-back-stanze" type="button" data-scene="stanze" data-hotspot-id="back" data-label="Torna alla Reception" data-action="change-scene" data-target="reception" aria-label="Torna alla reception">
+        <span class="hotspot-label">Torna alla Reception</span>
+        <span class="hotspot-meta"></span>
+        <span class="hotspot-resize" aria-hidden="true"></span>
+      </button>
+
+      <button class="hotspot" id="hotspot-back-salone" type="button" data-scene="salone" data-hotspot-id="back" data-label="Torna alla Reception" data-action="change-scene" data-target="reception" aria-label="Torna alla reception">
+        <span class="hotspot-label">Torna alla Reception</span>
+        <span class="hotspot-meta"></span>
+        <span class="hotspot-resize" aria-hidden="true"></span>
+      </button>
+
+      <button class="hotspot" id="hotspot-back-sala-pranzo" type="button" data-scene="sala-pranzo" data-hotspot-id="back" data-label="Torna alla Reception" data-action="change-scene" data-target="reception" aria-label="Torna alla reception">
+        <span class="hotspot-label">Torna alla Reception</span>
+        <span class="hotspot-meta"></span>
+        <span class="hotspot-resize" aria-hidden="true"></span>
+      </button>
+    </section>
+
+    <section class="console" aria-live="polite">
+      <p class="console-title">Console</p>
+      <p class="console-output" id="console-output">Benvenuto alla reception. Clicca un'area per vedere un messaggio.</p>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

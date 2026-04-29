@@ -1,0 +1,236 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Arial, sans-serif;
+  background: #e8dccb;
+  color: #2d241b;
+}
+
+#game {
+  position: relative;
+  width: 1280px;
+  height: 720px;
+  padding: 16px;
+  overflow: hidden;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-color: #cbb69e;
+}
+
+#game[data-scene="reception"] {
+  background-image: url("assets/img/reception.png");
+  background-color: #cbb69e;
+}
+
+#game[data-scene="stanze"] {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.12)),
+    linear-gradient(135deg, #b29e84 0%, #8f7b63 100%);
+}
+
+#game[data-scene="infermeria"] {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)),
+    linear-gradient(135deg, #bfd8d1 0%, #8fb4ac 100%);
+}
+
+#game[data-scene="salone"] {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.08)),
+    linear-gradient(135deg, #c7b2a1 0%, #9f8068 100%);
+}
+
+#game[data-scene="sala-pranzo"] {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.06)),
+    linear-gradient(135deg, #d8c69d 0%, #b69157 100%);
+}
+
+.header {
+  position: relative;
+  z-index: 3;
+  text-align: center;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
+.room-name {
+  margin: 8px 0 0;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.scene {
+  position: relative;
+  width: 100%;
+  height: 500px;
+  margin-top: 12px;
+}
+
+.dev-toolbar {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.dev-button {
+  padding: 10px 14px;
+  border: 2px solid #3e4d6c;
+  border-radius: 999px;
+  background: rgba(231, 238, 250, 0.96);
+  color: #1c2840;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dev-button:hover,
+.dev-button:focus-visible,
+.dev-button.is-active {
+  background: #1c2840;
+  color: #ffffff;
+}
+
+.scene-nav {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.scene-nav-button {
+  padding: 10px 14px;
+  border: 2px solid #5a4a39;
+  border-radius: 999px;
+  background: rgba(255, 247, 235, 0.95);
+  color: #2d241b;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.scene-nav-button:hover,
+.scene-nav-button:focus-visible,
+.scene-nav-button.is-active {
+  background: #2e261f;
+  color: #f9f1e2;
+}
+
+.hotspot {
+  position: absolute;
+  z-index: 2;
+  display: none;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 10px 26px 24px 10px;
+  border: 2px dashed #7a1f1f;
+  background: rgba(255, 241, 204, 0.78);
+  color: #3b1f0d;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  appearance: none;
+}
+
+.hotspot.is-visible {
+  display: flex;
+}
+
+.hotspot:hover,
+.hotspot:focus-visible {
+  background: rgba(255, 226, 148, 0.9);
+  border-color: #b33a3a;
+  outline: 2px solid rgba(255, 255, 255, 0.85);
+  outline-offset: 1px;
+}
+
+.hotspot.is-editor {
+  box-shadow: 0 0 0 2px rgba(28, 40, 64, 0.18);
+}
+
+.hotspot-label,
+.hotspot-meta {
+  display: block;
+  pointer-events: none;
+}
+
+.hotspot-label {
+  margin-right: 6px;
+}
+
+.hotspot-meta {
+  margin-top: 4px;
+  font-size: 0.78rem;
+  line-height: 1.3;
+  font-weight: 600;
+  display: none;
+}
+
+.hotspot-resize {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: #1c2840;
+  border: 1px solid #ffffff;
+  cursor: nwse-resize;
+  display: none;
+}
+
+.hotspot.is-editor .hotspot-meta,
+.hotspot.is-editor .hotspot-resize {
+  display: block;
+}
+
+.hotspot[data-hotspot-id="back"] {
+  border-color: #0f5f59;
+  background: rgba(204, 247, 242, 0.82);
+  color: #123c39;
+}
+
+.console {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 1;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #2e261f;
+  color: #f9f1e2;
+}
+
+.console-title {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.console-output {
+  margin: 0;
+  min-height: 24px;
+  line-height: 1.5;
+}
