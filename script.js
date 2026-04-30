@@ -6,7 +6,8 @@ const hotspots = document.querySelectorAll(".hotspot");
 const navButtons = document.querySelectorAll(".scene-nav-button");
 const toggleEditorButton = document.getElementById("toggle-editor");
 const togglePreviewButton = document.getElementById("toggle-preview");
-const placeGianniRandomButton = document.getElementById("place-gianni-random");
+const toggleTimeOfDayButton = document.getElementById("toggle-time-of-day");
+const randomizeDiningSeatsButton = document.getElementById("randomize-dining-seats");
 const copyLayoutButton = document.getElementById("copy-layout");
 const seatAnchorElements = document.querySelectorAll(".seat-anchor");
 const characters = document.querySelectorAll(".character");
@@ -32,6 +33,25 @@ const scenes = {
   "sala-mensa": {
     label: "Sala Mensa",
     message: "Sei nella sala mensa. Nell'aria c'e' ancora odore di caffe'."
+  }
+};
+
+const roomBackgrounds = {
+  reception: {
+    day: "assets/img/reception.png",
+    night: "assets/img/receptionnotte.png"
+  },
+  infermeria: {
+    day: "assets/img/infermieria.png",
+    night: "assets/img/infermierianotte.png"
+  },
+  camere: {
+    day: "assets/img/stanzalettogiorno.png",
+    night: "assets/img/stanzalettonotte.png"
+  },
+  "sala-mensa": {
+    day: "assets/img/sala mensa.png",
+    night: "assets/img/mensanotte.png"
   }
 };
 
@@ -65,7 +85,8 @@ const hotspotLayout = {
 
 const characterLayout = {
   "sala-mensa": {
-    nonnogianni: { left: 48.25, top: 34.24, width: 11.51, height: 18.76 }
+    nonnogianni: { left: 48.25, top: 34.24, width: 11.51, height: 18.76 },
+    lauda: { left: 0, top: 0, width: 11.51, height: 18.76 }
   }
 };
 
@@ -92,7 +113,8 @@ const seatAnchors = {
 };
 
 const characterSeats = {
-  nonnogianni: "posto4"
+  nonnogianni: "posto4",
+  lauda: null
 };
 
 const nonnoGianniLines = [
@@ -102,7 +124,17 @@ const nonnoGianniLines = [
   "prendi l'ascia"
 ];
 
+const laudaLines = [
+  "Non mi piace questo posto.",
+  "Ho fame.",
+  "Dov'e' il dolce?",
+  "Questo non e' il mio bicchiere."
+];
+
+const diningCharacters = ["nonnogianni", "lauda"];
+
 let currentSceneId = "reception";
+let timeOfDay = "day";
 let editorEnabled = false;
 let gamePreviewEnabled = false;
 let interaction = null;
@@ -131,6 +163,23 @@ function getBubbleLayout(sceneId, bubbleId) {
 
 function getSeatAnchorLayout(sceneId, seatId) {
   return seatAnchors[sceneId]?.[seatId];
+}
+
+function updateTimeOfDayButton() {
+  toggleTimeOfDayButton.textContent = timeOfDay === "day" ? "Ora: Giorno" : "Ora: Notte";
+}
+
+function updateRoomBackground(sceneId) {
+  const sceneBackgrounds = roomBackgrounds[sceneId];
+  const backgroundPath = sceneBackgrounds?.[timeOfDay];
+
+  if (!backgroundPath) {
+    game.style.removeProperty("background-image");
+    console.warn(`Nessuna immagine definita per la scena "${sceneId}" in modalita' "${timeOfDay}".`);
+    return;
+  }
+
+  game.style.backgroundImage = `url("${backgroundPath}")`;
 }
 
 function ensureSceneLayout(sceneId) {
@@ -302,6 +351,42 @@ function refreshHotspots() {
   }
 }
 
+function getOccupiedSeats() {
+  const occupiedSeats = [];
+
+  for (const characterId of diningCharacters) {
+    const seatId = characterSeats[characterId];
+
+    if (seatAnchors["sala-mensa"]?.[seatId]) {
+      occupiedSeats.push(seatId);
+    }
+  }
+
+  return occupiedSeats;
+}
+
+function getFreeSeats() {
+  const diningSeats = ["posto1", "posto2", "posto3", "posto4", "posto5", "posto6"];
+  const occupiedSeats = new Set(getOccupiedSeats());
+
+  return diningSeats.filter((seatId) => {
+    return seatAnchors["sala-mensa"]?.[seatId] && !occupiedSeats.has(seatId);
+  });
+}
+
+function hasValidDiningSeat(characterId) {
+  const seatId = characterSeats[characterId];
+  if (!seatAnchors["sala-mensa"]?.[seatId]) {
+    return false;
+  }
+
+  const occupiedByOthers = diningCharacters.some((otherCharacterId) => {
+    return otherCharacterId !== characterId && characterSeats[otherCharacterId] === seatId;
+  });
+
+  return !occupiedByOthers;
+}
+
 function renderScene(sceneId) {
   const scene = scenes[sceneId];
 
@@ -311,7 +396,13 @@ function renderScene(sceneId) {
 
   currentSceneId = sceneId;
   hideBubbles();
+
+  if (sceneId === "sala-mensa" && diningCharacters.some((characterId) => !hasValidDiningSeat(characterId))) {
+    randomizeDiningSeats();
+  }
+
   game.dataset.scene = sceneId;
+  updateRoomBackground(sceneId);
   sceneElement.setAttribute("aria-label", scene.label);
   roomName.textContent = scene.label;
   consoleOutput.textContent = scene.message;
@@ -506,6 +597,12 @@ function showNonnoGianniBubble() {
   consoleOutput.textContent = "Nonno Gianni ti guarda in silenzio.";
 }
 
+function showLaudaBubble() {
+  const randomLine = laudaLines[Math.floor(Math.random() * laudaLines.length)];
+  showSpeechBubbleForCharacter("lauda", randomLine);
+  consoleOutput.textContent = "Lauda sistema il vassoio e borbotta qualcosa.";
+}
+
 function showSpeechBubbleForCharacter(characterId, text, duration = 3000) {
   const seatId = characterSeats[characterId];
 
@@ -540,7 +637,23 @@ function showSpeechBubbleForCharacter(characterId, text, duration = 3000) {
 
 function placeCharacterAtSeat(characterId, seatId) {
   const character = characterLayout["sala-mensa"]?.[characterId];
-  const seat = seatAnchors["sala-mensa"]?.[seatId];
+  let targetSeatId = seatId;
+
+  const isSeatOccupiedByAnotherCharacter = diningCharacters.some((otherCharacterId) => {
+    return otherCharacterId !== characterId && characterSeats[otherCharacterId] === targetSeatId;
+  });
+
+  if (isSeatOccupiedByAnotherCharacter || !seatAnchors["sala-mensa"]?.[targetSeatId]) {
+    const freeSeats = getFreeSeats();
+
+    if (freeSeats.length === 0) {
+      return;
+    }
+
+    targetSeatId = freeSeats[Math.floor(Math.random() * freeSeats.length)];
+  }
+
+  const seat = seatAnchors["sala-mensa"]?.[targetSeatId];
 
   if (!character || !seat) {
     return;
@@ -548,10 +661,37 @@ function placeCharacterAtSeat(characterId, seatId) {
 
   character.left = roundPercent(seat.x - character.width / 2);
   character.top = roundPercent(seat.y - character.height);
-  characterSeats[characterId] = seatId;
+  characterSeats[characterId] = targetSeatId;
 
   refreshCharacters();
   refreshBubbles();
+}
+
+function randomizeDiningSeats() {
+  const availableSeats = ["posto1", "posto2", "posto3", "posto4", "posto5", "posto6"].filter((seatId) => {
+    return Boolean(seatAnchors["sala-mensa"]?.[seatId]);
+  });
+
+  if (availableSeats.length < diningCharacters.length) {
+    return;
+  }
+
+  hideBubbles();
+
+  for (const characterId of diningCharacters) {
+    characterSeats[characterId] = null;
+  }
+
+  for (const characterId of diningCharacters) {
+    const freeSeats = getFreeSeats();
+
+    if (freeSeats.length === 0) {
+      return;
+    }
+
+    const randomSeatId = freeSeats[Math.floor(Math.random() * freeSeats.length)];
+    placeCharacterAtSeat(characterId, randomSeatId);
+  }
 }
 
 function handleHotspotClick(event, hotspot) {
@@ -612,8 +752,17 @@ for (const character of characters) {
       return;
     }
 
-    if (currentSceneId === "sala-mensa" && character.dataset.characterId === "nonnogianni") {
+    if (currentSceneId !== "sala-mensa") {
+      return;
+    }
+
+    if (character.dataset.characterId === "nonnogianni") {
       showNonnoGianniBubble();
+      return;
+    }
+
+    if (character.dataset.characterId === "lauda") {
+      showLaudaBubble();
     }
   });
 
@@ -667,16 +816,15 @@ togglePreviewButton.addEventListener("click", () => {
   updatePreviewState();
 });
 
-placeGianniRandomButton.addEventListener("click", () => {
-  const seatIds = Object.keys(seatAnchors["sala-mensa"] || {});
+toggleTimeOfDayButton.addEventListener("click", () => {
+  timeOfDay = timeOfDay === "day" ? "night" : "day";
+  updateTimeOfDayButton();
+  updateRoomBackground(currentSceneId);
+});
 
-  if (seatIds.length === 0) {
-    return;
-  }
-
-  const randomSeatId = seatIds[Math.floor(Math.random() * seatIds.length)];
-  placeCharacterAtSeat("nonnogianni", randomSeatId);
-  consoleOutput.textContent = `Nonno Gianni spostato su ${randomSeatId}.`;
+randomizeDiningSeatsButton.addEventListener("click", () => {
+  randomizeDiningSeats();
+  consoleOutput.textContent = "Posti della mensa randomizzati.";
 });
 
 copyLayoutButton.addEventListener("click", () => {
@@ -706,3 +854,4 @@ for (const seatAnchor of seatAnchorElements) {
 renderScene("reception");
 updateEditorState();
 updatePreviewState();
+updateTimeOfDayButton();
