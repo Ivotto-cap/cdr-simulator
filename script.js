@@ -85,19 +85,19 @@ const hotspotLayout = {
 
 const characterLayout = {
   "sala-mensa": {
-    nonnogianni: { left: 48.25, top: 34.24, width: 11.51, height: 18.76 },
-    lauda: { left: 0, top: 0, width: 11.51, height: 18.76 }
+    nonnogianni: { left: 32.64, top: 34.24, width: 11.51, height: 18.76 },
+    lauda: { left: 55.85, top: 34.24, width: 11.51, height: 18.76 }
   }
 };
 
 const bubbleLayout = {
   "sala-mensa": {
-    posto1: { left: 24.75, top: 27.21, width: 13.92, height: 7.78 },
-    posto2: { left: 35.32, top: 19.52, width: 15.29, height: 8.6 },
-    posto3: { left: 39.38, top: 28.18, width: 12.88, height: 8.27 },
-    posto4: { left: 49.22, top: 16.58, width: 17.37, height: 8.6 },
+    posto1: { left: 22.11, top: 23.29, width: 14.16, height: 10.23 },
+    posto2: { left: 35.32, top: 19.52, width: 15.29, height: 10.07 },
+    posto3: { left: 39.86, top: 27.36, width: 12.88, height: 9.74 },
+    posto4: { left: 49.22, top: 16.58, width: 17.37, height: 9.58 },
     posto5: { left: 54.96, top: 24.42, width: 14.08, height: 8.6 },
-    posto6: { left: 68.71, top: 23.93, width: 17.37, height: 8.6 }
+    posto6: { left: 68.71, top: 23.93, width: 17.45, height: 10.56 }
   }
 };
 
@@ -113,8 +113,8 @@ const seatAnchors = {
 };
 
 const characterSeats = {
-  nonnogianni: "posto4",
-  lauda: null
+  nonnogianni: "posto2",
+  lauda: "posto5"
 };
 
 const nonnoGianniLines = [
