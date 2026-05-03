@@ -86,7 +86,10 @@ const hotspotLayout = {
 const characterLayout = {
   "sala-mensa": {
     nonnogianni: { left: 32.64, top: 34.24, width: 11.51, height: 18.76 },
-    lauda: { left: 55.85, top: 34.24, width: 11.51, height: 18.76 }
+    lauda: { left: 55.85, top: 34.24, width: 11.51, height: 18.76 },
+    orietta: { left: 20, top: 34, width: 11.5, height: 18.7 },
+    sandra: { left: 70, top: 34, width: 11.5, height: 18.7 },
+    liliana: { left: 45, top: 34, width: 11.5, height: 18.7 }
   }
 };
 
@@ -114,7 +117,10 @@ const seatAnchors = {
 
 const characterSeats = {
   nonnogianni: "posto2",
-  lauda: "posto5"
+  lauda: "posto5",
+  orietta: "posto1",
+  liliana: "posto3",
+  sandra: "posto6"
 };
 
 const nonnoGianniLines = [
@@ -131,7 +137,7 @@ const laudaLines = [
   "Questo non e' il mio bicchiere."
 ];
 
-const diningCharacters = ["nonnogianni", "lauda"];
+const diningCharacters = ["nonnogianni", "lauda", "orietta", "liliana", "sandra"];
 
 let currentSceneId = "reception";
 let timeOfDay = "day";
@@ -348,6 +354,21 @@ function refreshHotspots() {
     }
 
     applyHotspotLayout(hotspot, layout);
+  }
+}
+
+function syncDiningCharacterPositions() {
+  for (const characterId of diningCharacters) {
+    const seatId = characterSeats[characterId];
+    const character = characterLayout["sala-mensa"]?.[characterId];
+    const seat = seatAnchors["sala-mensa"]?.[seatId];
+
+    if (!character || !seat) {
+      continue;
+    }
+
+    character.left = roundPercent(seat.x - character.width / 2);
+    character.top = roundPercent(seat.y - character.height);
   }
 }
 
@@ -851,6 +872,7 @@ for (const seatAnchor of seatAnchorElements) {
   ensureSeatAnchorSceneLayout(seatAnchor.dataset.scene);
 }
 
+syncDiningCharacterPositions();
 renderScene("reception");
 updateEditorState();
 updatePreviewState();
