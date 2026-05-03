@@ -169,6 +169,18 @@ let diningDialoguesIntervalId = null;
 let spokenThisRound = new Set();
 let lastSpeakerId = null;
 const lastDialogueByCharacter = {};
+let isSpecialDialogueRunning = false;
+let gianniLaudaDebateAlreadyTriggered = false;
+let isUpdatingDiningSeats = false;
+
+const adjacentSeats = {
+  posto1: ["posto2"],
+  posto2: ["posto1", "posto3"],
+  posto3: ["posto2", "posto4"],
+  posto4: ["posto3", "posto5"],
+  posto5: ["posto4", "posto6"],
+  posto6: ["posto5"]
+};
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -209,6 +221,12 @@ function updateRoomBackground(sceneId) {
   }
 
   game.style.backgroundImage = `url("${backgroundPath}")`;
+}
+
+function wait(ms) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
 }
 
 function ensureSceneLayout(sceneId) {
@@ -325,6 +343,10 @@ function hideBubbles() {
   }
 }
 
+function hideAllBubbles() {
+  hideBubbles();
+}
+
 function refreshBubbles() {
   for (const bubble of speechBubbles) {
     const isCurrentScene = bubble.dataset.scene === currentSceneId;
@@ -431,6 +453,22 @@ function hasValidDiningSeat(characterId) {
   return !occupiedByOthers;
 }
 
+function areSeatsAdjacent(seatA, seatB) {
+  if (!seatA || !seatB) {
+    return false;
+  }
+
+  return adjacentSeats[seatA]?.includes(seatB) || false;
+}
+
+function setCharacterImage(characterId, src) {
+  const image = document.querySelector(`#character-${characterId} img`);
+
+  if (image) {
+    image.src = src;
+  }
+}
+
 function getDialogueLines(characterId) {
   return characterId === "nonnogianni"
     ? nonnoGianniLines
@@ -483,6 +521,10 @@ function pickNextSpeaker(characters) {
 }
 
 function showBubble(characterId) {
+  if (isSpecialDialogueRunning) {
+    return;
+  }
+
   const seatId = characterSeats[characterId];
   const bubble = document.getElementById(`bubble-${seatId}`);
 
@@ -505,7 +547,7 @@ function startDiningDialogues() {
   }
 
   diningDialoguesIntervalId = window.setInterval(() => {
-    if (currentSceneId !== "sala-mensa") {
+    if (currentSceneId !== "sala-mensa" || isSpecialDialogueRunning) {
       return;
     }
 
@@ -530,6 +572,63 @@ function stopDiningDialogues() {
   diningDialoguesIntervalId = null;
   spokenThisRound.clear();
   lastSpeakerId = null;
+}
+
+function showSpecificBubble(characterId, textContent) {
+  showSpeechBubbleForCharacter(characterId, textContent, 2500);
+}
+
+async function startGianniLaudaDebate() {
+  if (isSpecialDialogueRunning) {
+    return;
+  }
+
+  isSpecialDialogueRunning = true;
+  gianniLaudaDebateAlreadyTriggered = true;
+  hideAllBubbles();
+
+  setCharacterImage("nonnogianni", "assets/characters/nonnogiannirabbia.png");
+  setCharacterImage("lauda", "assets/characters/laudarabbia.png");
+
+  const sequence = [
+    { characterId: "nonnogianni", text: "Lauda! Ingorda!" },
+    { characterId: "lauda", text: "non ti curar di loro..." },
+    { characterId: "nonnogianni", text: "Guardate Lauda! Ha le mani prensili!" },
+    { characterId: "lauda", text: "Vattenaffanculo!" },
+    { characterId: "nonnogianni", text: "ahahahahah" },
+    { characterId: "lauda", text: "*borbotta*" }
+  ];
+
+  for (const line of sequence) {
+    hideAllBubbles();
+    showSpecificBubble(line.characterId, line.text);
+    await wait(2500);
+    hideAllBubbles();
+    await wait(400);
+  }
+
+  await wait(800);
+
+  setCharacterImage("nonnogianni", "assets/characters/nonnogianni.png");
+  setCharacterImage("lauda", "assets/characters/lauda.png");
+  isSpecialDialogueRunning = false;
+}
+
+function checkGianniLaudaDebate() {
+  if (currentSceneId !== "sala-mensa") {
+    return;
+  }
+
+  if (isUpdatingDiningSeats || isSpecialDialogueRunning || gianniLaudaDebateAlreadyTriggered) {
+    return;
+  }
+
+  const gianniSeat = characterSeats.nonnogianni;
+  const laudaSeat = characterSeats.lauda;
+
+  if (areSeatsAdjacent(gianniSeat, laudaSeat)) {
+    startGianniLaudaDebate();
+  }
 }
 
 function renderScene(sceneId) {
@@ -567,6 +666,10 @@ function renderScene(sceneId) {
   refreshCharacters();
   refreshBubbles();
   refreshSeatAnchors();
+
+  if (sceneId === "sala-mensa") {
+    checkGianniLaudaDebate();
+  }
 }
 
 function updateEditorState() {
@@ -743,12 +846,20 @@ function stopInteraction() {
 }
 
 function showNonnoGianniBubble() {
+  if (isSpecialDialogueRunning) {
+    return;
+  }
+
   const randomLine = nonnoGianniLines[Math.floor(Math.random() * nonnoGianniLines.length)];
   showSpeechBubbleForCharacter("nonnogianni", randomLine);
   consoleOutput.textContent = "Nonno Gianni ti guarda in silenzio.";
 }
 
 function showLaudaBubble() {
+  if (isSpecialDialogueRunning) {
+    return;
+  }
+
   const randomLine = laudaLines[Math.floor(Math.random() * laudaLines.length)];
   showSpeechBubbleForCharacter("lauda", randomLine);
   consoleOutput.textContent = "Lauda sistema il vassoio e borbotta qualcosa.";
@@ -816,6 +927,7 @@ function placeCharacterAtSeat(characterId, seatId) {
 
   refreshCharacters();
   refreshBubbles();
+  checkGianniLaudaDebate();
 }
 
 function randomizeDiningSeats() {
@@ -828,21 +940,28 @@ function randomizeDiningSeats() {
   }
 
   hideBubbles();
+  isUpdatingDiningSeats = true;
 
-  for (const characterId of diningCharacters) {
-    characterSeats[characterId] = null;
-  }
-
-  for (const characterId of diningCharacters) {
-    const freeSeats = getFreeSeats();
-
-    if (freeSeats.length === 0) {
-      return;
+  try {
+    for (const characterId of diningCharacters) {
+      characterSeats[characterId] = null;
     }
 
-    const randomSeatId = freeSeats[Math.floor(Math.random() * freeSeats.length)];
-    placeCharacterAtSeat(characterId, randomSeatId);
+    for (const characterId of diningCharacters) {
+      const freeSeats = getFreeSeats();
+
+      if (freeSeats.length === 0) {
+        return;
+      }
+
+      const randomSeatId = freeSeats[Math.floor(Math.random() * freeSeats.length)];
+      placeCharacterAtSeat(characterId, randomSeatId);
+    }
+  } finally {
+    isUpdatingDiningSeats = false;
   }
+
+  checkGianniLaudaDebate();
 }
 
 function handleHotspotClick(event, hotspot) {
