@@ -299,11 +299,19 @@ body {
 .reception-character-slot {
   opacity: 0;
   pointer-events: none;
-  transition: opacity 350ms ease;
+  transform: translateY(0);
+  transition: opacity 350ms ease, transform 350ms ease;
 }
 
 .reception-character-slot.active {
   opacity: 1;
+  transform: translateY(0);
+}
+
+.reception-character-slot.fading-out {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 2800ms ease, transform 2800ms ease;
 }
 
 .reception-character-slot.is-editor {
@@ -313,6 +321,43 @@ body {
 
 .reception-character-slot.active.is-editor {
   opacity: 1;
+}
+
+.reception-bubble {
+  position: absolute;
+  z-index: 4;
+  display: none;
+  max-width: 260px;
+  padding: 10px 14px;
+  border: 2px solid #3f342a;
+  border-radius: 18px;
+  background: rgba(255, 250, 238, 0.98);
+  color: #111111;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+  pointer-events: none;
+}
+
+.reception-bubble.is-visible {
+  display: block;
+}
+
+.reception-bubble::after {
+  content: "";
+  position: absolute;
+  left: 18%;
+  bottom: -14px;
+  width: 18px;
+  height: 18px;
+  background: rgba(255, 250, 238, 0.98);
+  border-right: 2px solid #3f342a;
+  border-bottom: 2px solid #3f342a;
+  transform: rotate(45deg);
+}
+
+.reception-bubble-text {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.35;
 }
 
 .speech-bubble {
@@ -475,6 +520,34 @@ body {
   font-size: 0.9rem;
   font-weight: 700;
   text-transform: uppercase;
+}
+
+.console-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.console-actions:empty {
+  display: none;
+}
+
+.console-action-button {
+  padding: 9px 14px;
+  border: 2px solid #5a4a39;
+  border-radius: 999px;
+  background: rgba(255, 247, 235, 0.96);
+  color: #2d241b;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.console-action-button:hover,
+.console-action-button:focus-visible {
+  background: #2e261f;
+  color: #f9f1e2;
 }
 
 .console-output {

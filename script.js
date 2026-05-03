@@ -2,17 +2,18 @@ const game = document.getElementById("game");
 const sceneElement = document.getElementById("scene");
 const roomName = document.getElementById("room-name");
 const consoleOutput = document.getElementById("console-output");
+const consoleActions = document.getElementById("console-actions");
 const hotspots = document.querySelectorAll(".hotspot");
 const navButtons = document.querySelectorAll(".scene-nav-button");
 const toggleEditorButton = document.getElementById("toggle-editor");
 const togglePreviewButton = document.getElementById("toggle-preview");
 const toggleTimeOfDayButton = document.getElementById("toggle-time-of-day");
-const testReceptionSlotButton = document.getElementById("test-reception-slot");
 const randomizeDiningSeatsButton = document.getElementById("randomize-dining-seats");
 const copyLayoutButton = document.getElementById("copy-layout");
 const seatAnchorElements = document.querySelectorAll(".seat-anchor");
 const characters = document.querySelectorAll(".character");
 const speechBubbles = document.querySelectorAll(".speech-bubble");
+const receptionBubble = document.getElementById("reception-bubble");
 
 const scenes = {
   reception: {
@@ -178,6 +179,11 @@ const lastDialogueByCharacter = {};
 let isSpecialDialogueRunning = false;
 let gianniLaudaDebateAlreadyTriggered = false;
 let isUpdatingDiningSeats = false;
+let isReceptionEventRunning = false;
+let receptionEventTimerId = null;
+let receptionEventRunId = 0;
+let activeReceptionCharacterSlotId = null;
+let receptionEventAttemptedThisVisit = false;
 
 const adjacentSeats = {
   posto1: ["posto2"],
@@ -187,6 +193,20 @@ const adjacentSeats = {
   posto5: ["posto4", "posto6"],
   posto6: ["posto5"]
 };
+
+const receptionDaySlots = ["reception-slot1", "reception-slot3"];
+const receptionEvents = [
+  {
+    id: "reception-liliana",
+    enabled: true,
+    run: startLilianaReceptionEvent
+  },
+  {
+    id: "reception-placeholder-2",
+    enabled: false,
+    run: null
+  }
+];
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -334,8 +354,9 @@ function refreshCharacters() {
     }
 
     const isReceptionCharacterSlot = character.classList.contains("reception-character-slot");
+    const isFadingOut = character.classList.contains("fading-out");
     const shouldShow = isReceptionCharacterSlot
-      ? editorEnabled || character.classList.contains("active")
+      ? editorEnabled || character.classList.contains("active") || isFadingOut
       : true;
 
     character.classList.toggle("is-visible", shouldShow);
@@ -343,8 +364,41 @@ function refreshCharacters() {
   }
 }
 
+function clearConsoleActions() {
+  consoleActions.innerHTML = "";
+}
+
+function isLaudaReceptionCharacter(imageSrc, altText) {
+  return imageSrc.includes("lauda") || altText.trim().toLowerCase() === "lauda";
+}
+
+function getAvailableReceptionSlot(preferredSlotId) {
+  if (preferredSlotId && receptionDaySlots.includes(preferredSlotId)) {
+    return preferredSlotId;
+  }
+
+  for (const slotId of receptionDaySlots) {
+    const slotElement = document.getElementById(`character-${slotId}`);
+
+    if (slotElement && !slotElement.classList.contains("active")) {
+      return slotId;
+    }
+  }
+
+  return receptionDaySlots[0];
+}
+
 function showReceptionCharacter(slotId, imageSrc, altText = "") {
-  const element = document.getElementById(`character-${slotId}`);
+  if (timeOfDay !== "day") {
+    console.warn("Tentativo di mostrare un personaggio in reception di notte ignorato.");
+    return;
+  }
+
+  const isLauda = isLaudaReceptionCharacter(imageSrc, altText);
+  const targetSlotId = isLauda
+    ? "reception-slot2"
+    : getAvailableReceptionSlot(slotId);
+  const element = document.getElementById(`character-${targetSlotId}`);
 
   if (!element) {
     return;
@@ -358,9 +412,11 @@ function showReceptionCharacter(slotId, imageSrc, altText = "") {
 
   image.src = imageSrc;
   image.alt = altText;
+  element.classList.remove("fading-out");
   element.classList.add("active");
   element.setAttribute("aria-hidden", "false");
   refreshCharacters();
+  return targetSlotId;
 }
 
 function hideReceptionCharacter(slotId) {
@@ -371,7 +427,7 @@ function hideReceptionCharacter(slotId) {
   }
 
   element.classList.remove("active");
-  element.setAttribute("aria-hidden", "true");
+  element.classList.add("fading-out");
   refreshCharacters();
 
   window.setTimeout(() => {
@@ -381,13 +437,158 @@ function hideReceptionCharacter(slotId) {
       image.src = "";
       image.alt = "";
     }
-  }, 350);
+
+    if (!element.classList.contains("active")) {
+      element.classList.remove("fading-out");
+      element.setAttribute("aria-hidden", "true");
+      refreshCharacters();
+    }
+  }, 2800);
 }
 
 function clearReceptionCharacters() {
   hideReceptionCharacter("reception-slot1");
   hideReceptionCharacter("reception-slot2");
   hideReceptionCharacter("reception-slot3");
+  activeReceptionCharacterSlotId = null;
+}
+
+function showReceptionBubble(slotId, text) {
+  const layout = characterLayout.reception?.[slotId];
+
+  if (!receptionBubble || !layout) {
+    return;
+  }
+
+  receptionBubble.querySelector(".reception-bubble-text").textContent = text;
+  receptionBubble.style.left = `${roundPercent(layout.left + layout.width * 0.08)}%`;
+  receptionBubble.style.top = `${roundPercent(Math.max(1, layout.top - 9))}%`;
+  receptionBubble.setAttribute("aria-hidden", "false");
+  receptionBubble.classList.add("is-visible");
+}
+
+function hideReceptionBubble() {
+  if (!receptionBubble) {
+    return;
+  }
+
+  receptionBubble.classList.remove("is-visible");
+  receptionBubble.setAttribute("aria-hidden", "true");
+}
+
+function stopReceptionEventTimer() {
+  if (!receptionEventTimerId) {
+    return;
+  }
+
+  clearTimeout(receptionEventTimerId);
+  receptionEventTimerId = null;
+}
+
+function cleanupReceptionEvent() {
+  receptionEventRunId += 1;
+  isReceptionEventRunning = false;
+  hideReceptionBubble();
+  clearReceptionCharacters();
+  clearConsoleActions();
+}
+
+function finishReceptionEvent() {
+  cleanupReceptionEvent();
+}
+
+function canRunReceptionEvents() {
+  return currentSceneId === "reception" && timeOfDay === "day";
+}
+
+function pickReceptionEvent() {
+  const enabledEvents = receptionEvents.filter((event) => event.enabled && typeof event.run === "function");
+
+  if (enabledEvents.length === 0) {
+    return null;
+  }
+
+  return enabledEvents[Math.floor(Math.random() * enabledEvents.length)];
+}
+
+function scheduleReceptionEventCheck() {
+  stopReceptionEventTimer();
+
+  if (!canRunReceptionEvents() || isReceptionEventRunning || receptionEventAttemptedThisVisit) {
+    return;
+  }
+
+  receptionEventTimerId = window.setTimeout(() => {
+    receptionEventTimerId = null;
+
+    if (!canRunReceptionEvents() || isReceptionEventRunning || receptionEventAttemptedThisVisit) {
+      return;
+    }
+
+    receptionEventAttemptedThisVisit = true;
+
+    const nextEvent = pickReceptionEvent();
+
+    if (!nextEvent) {
+      return;
+    }
+
+    nextEvent.run();
+  }, 5000);
+}
+
+function cancelReceptionEvents() {
+  stopReceptionEventTimer();
+  receptionEventAttemptedThisVisit = false;
+  cleanupReceptionEvent();
+}
+
+function showReceptionChoices(choices, onSelect) {
+  clearConsoleActions();
+
+  for (const choice of choices) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "console-action-button";
+    button.textContent = choice;
+    button.addEventListener("click", () => {
+      onSelect(choice);
+    });
+    consoleActions.appendChild(button);
+  }
+}
+
+async function startLilianaReceptionEvent() {
+  if (!canRunReceptionEvents() || isReceptionEventRunning) {
+    return;
+  }
+
+  isReceptionEventRunning = true;
+  const eventRunId = receptionEventRunId + 1;
+  receptionEventRunId = eventRunId;
+  consoleOutput.textContent = "Si avvicina Liliana";
+  activeReceptionCharacterSlotId = showReceptionCharacter("reception-slot1", "assets/characters/liliana.png", "Liliana");
+
+  if (!activeReceptionCharacterSlotId) {
+    isReceptionEventRunning = false;
+    scheduleReceptionEventCheck();
+    return;
+  }
+
+  await wait(3000);
+
+  if (receptionEventRunId !== eventRunId || !canRunReceptionEvents()) {
+    return;
+  }
+
+  showReceptionBubble(activeReceptionCharacterSlotId, "Hai visto la tartaruga?");
+  showReceptionChoices(["Si", "No"], () => {
+    if (receptionEventRunId !== eventRunId) {
+      return;
+    }
+
+    finishReceptionEvent();
+  });
 }
 
 function hideBubbles() {
@@ -700,6 +901,12 @@ function renderScene(sceneId) {
   currentSceneId = sceneId;
   hideBubbles();
 
+  if (sceneId === "reception") {
+    receptionEventAttemptedThisVisit = false;
+  } else {
+    cancelReceptionEvents();
+  }
+
   if (sceneId === "sala-mensa") {
     startDiningDialogues();
   } else {
@@ -725,6 +932,10 @@ function renderScene(sceneId) {
   refreshCharacters();
   refreshBubbles();
   refreshSeatAnchors();
+
+  if (sceneId === "reception" && timeOfDay === "day") {
+    scheduleReceptionEventCheck();
+  }
 
   if (sceneId === "sala-mensa") {
     checkGianniLaudaDebate();
@@ -1148,15 +1359,17 @@ togglePreviewButton.addEventListener("click", () => {
 
 toggleTimeOfDayButton.addEventListener("click", () => {
   timeOfDay = timeOfDay === "day" ? "night" : "day";
+
+  if (timeOfDay === "night") {
+    cancelReceptionEvents();
+  }
+
   updateTimeOfDayButton();
   updateRoomBackground(currentSceneId);
-});
 
-testReceptionSlotButton.addEventListener("click", () => {
-  showReceptionCharacter("reception-slot1", "assets/characters/nonnogianni.png", "Nonno Gianni");
-  showReceptionCharacter("reception-slot2", "assets/characters/lauda.png", "Lauda");
-  showReceptionCharacter("reception-slot3", "assets/characters/sandra.png", "Sandra");
-  consoleOutput.textContent = "Slot reception di test attivati.";
+  if (timeOfDay === "day" && currentSceneId === "reception") {
+    scheduleReceptionEventCheck();
+  }
 });
 
 randomizeDiningSeatsButton.addEventListener("click", () => {

@@ -89,6 +89,10 @@
           <span class="character-resize" aria-hidden="true"></span>
         </div>
 
+        <div class="reception-bubble" id="reception-bubble" aria-hidden="true">
+          <p class="reception-bubble-text">...</p>
+        </div>
+
         <button class="hotspot seat-slot" id="hotspot-posto1" type="button" data-scene="sala-mensa" data-hotspot-id="posto1" data-label="Posto 1" data-action="message" data-message="Hai selezionato posto 1" aria-label="Posto 1">
           <span class="hotspot-label">Posto 1</span>
           <span class="hotspot-meta"></span>
@@ -242,6 +246,7 @@
       <section class="console" aria-live="polite">
         <p class="console-title">Console</p>
         <p class="console-output" id="console-output">Benvenuto alla reception. Clicca un'area per vedere un messaggio.</p>
+        <div class="console-actions" id="console-actions"></div>
       </section>
     </main>
 
@@ -258,7 +263,6 @@
         <button class="dev-button" id="toggle-editor" type="button" aria-pressed="false">Editor Hotspot</button>
         <button class="dev-button" id="toggle-preview" type="button" aria-pressed="false">Vista Gioco</button>
         <button class="dev-button" id="toggle-time-of-day" type="button">Ora: Giorno</button>
-        <button class="dev-button" id="test-reception-slot" type="button">Test Reception Slot</button>
         <button class="dev-button" id="randomize-dining-seats" type="button">Randomizza Mensa</button>
         <button class="dev-button" id="copy-layout" type="button">Copia layout</button>
       </div>
