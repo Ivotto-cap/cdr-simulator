@@ -87,9 +87,9 @@ const characterLayout = {
   "sala-mensa": {
     nonnogianni: { left: 32.64, top: 34.24, width: 11.51, height: 18.76 },
     lauda: { left: 55.85, top: 34.24, width: 11.51, height: 18.76 },
-    orietta: { left: 20, top: 34, width: 11.5, height: 18.7 },
-    sandra: { left: 70, top: 34, width: 11.5, height: 18.7 },
-    liliana: { left: 45, top: 34, width: 11.5, height: 18.7 }
+    orietta: { left: 25.25, top: 34.3, width: 11.5, height: 18.7 },
+    sandra: { left: 63.25, top: 34.3, width: 11.5, height: 18.7 },
+    liliana: { left: 40.25, top: 34.3, width: 11.5, height: 18.7 }
   }
 };
 
@@ -99,7 +99,7 @@ const bubbleLayout = {
     posto2: { left: 35.32, top: 19.52, width: 15.29, height: 10.07 },
     posto3: { left: 39.86, top: 27.36, width: 12.88, height: 9.74 },
     posto4: { left: 49.22, top: 16.58, width: 17.37, height: 9.58 },
-    posto5: { left: 54.96, top: 24.42, width: 14.08, height: 8.6 },
+    posto5: { left: 54.96, top: 24.42, width: 14.08, height: 10.07 },
     posto6: { left: 68.71, top: 23.93, width: 17.45, height: 10.56 }
   }
 };
@@ -137,7 +137,26 @@ const laudaLines = [
   "Questo non e' il mio bicchiere."
 ];
 
+const characterDialogues = {
+  orietta: [
+    "Acqua calda per me!",
+    "Brodo di acqua grazie.",
+    "Zucchine lesse, senza sale."
+  ],
+  sandra: [
+    "Vuoi che ti aiuto?",
+    "Un piatto di pasta va bene.",
+    "Dammi quello che c'e'."
+  ],
+  liliana: [
+    "Alessandro ti sei alzato!",
+    "Matteo... Gianni... Ivo ehm..",
+    "Faccio il caffe'?"
+  ]
+};
+
 const diningCharacters = ["nonnogianni", "lauda", "orietta", "liliana", "sandra"];
+const diningDialogueCharacters = ["nonnogianni", "lauda", "orietta", "sandra", "liliana"];
 
 let currentSceneId = "reception";
 let timeOfDay = "day";
@@ -146,6 +165,10 @@ let gamePreviewEnabled = false;
 let interaction = null;
 let activeBubbleId = null;
 let bubbleTimeoutId = null;
+let diningDialoguesIntervalId = null;
+let spokenThisRound = new Set();
+let lastSpeakerId = null;
+const lastDialogueByCharacter = {};
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -408,6 +431,107 @@ function hasValidDiningSeat(characterId) {
   return !occupiedByOthers;
 }
 
+function getDialogueLines(characterId) {
+  return characterId === "nonnogianni"
+    ? nonnoGianniLines
+    : characterId === "lauda"
+      ? laudaLines
+      : characterDialogues[characterId];
+}
+
+function getRandomDialogue(characterId) {
+  const lines = getDialogueLines(characterId);
+
+  if (!lines || lines.length === 0) {
+    return "";
+  }
+
+  const lastDialogue = lastDialogueByCharacter[characterId];
+  const availableLines = lines.length > 1
+    ? lines.filter((line) => line !== lastDialogue)
+    : lines;
+  const nextDialogue = availableLines[Math.floor(Math.random() * availableLines.length)];
+
+  lastDialogueByCharacter[characterId] = nextDialogue;
+  return nextDialogue;
+}
+
+function pickNextSpeaker(characters) {
+  const validCharacters = characters.filter((characterId) => {
+    const lines = getDialogueLines(characterId);
+    return lines && lines.length > 0;
+  });
+
+  let available = validCharacters.filter((characterId) => !spokenThisRound.has(characterId));
+
+  if (available.length === 0) {
+    spokenThisRound.clear();
+    available = validCharacters;
+  }
+
+  available = available.filter((characterId) => characterId !== lastSpeakerId);
+
+  if (available.length === 0) {
+    available = validCharacters.filter((characterId) => !spokenThisRound.has(characterId));
+  }
+
+  if (available.length === 0) {
+    return null;
+  }
+
+  return available[Math.floor(Math.random() * available.length)];
+}
+
+function showBubble(characterId) {
+  const seatId = characterSeats[characterId];
+  const bubble = document.getElementById(`bubble-${seatId}`);
+
+  if (!bubble) {
+    return;
+  }
+
+  const dialogue = getRandomDialogue(characterId);
+
+  if (!dialogue) {
+    return;
+  }
+
+  showSpeechBubbleForCharacter(characterId, dialogue, 4000);
+}
+
+function startDiningDialogues() {
+  if (diningDialoguesIntervalId) {
+    return;
+  }
+
+  diningDialoguesIntervalId = window.setInterval(() => {
+    if (currentSceneId !== "sala-mensa") {
+      return;
+    }
+
+    const nextSpeaker = pickNextSpeaker(diningDialogueCharacters);
+
+    if (!nextSpeaker) {
+      return;
+    }
+
+    showBubble(nextSpeaker);
+    spokenThisRound.add(nextSpeaker);
+    lastSpeakerId = nextSpeaker;
+  }, 5000);
+}
+
+function stopDiningDialogues() {
+  if (!diningDialoguesIntervalId) {
+    return;
+  }
+
+  clearInterval(diningDialoguesIntervalId);
+  diningDialoguesIntervalId = null;
+  spokenThisRound.clear();
+  lastSpeakerId = null;
+}
+
 function renderScene(sceneId) {
   const scene = scenes[sceneId];
 
@@ -417,6 +541,12 @@ function renderScene(sceneId) {
 
   currentSceneId = sceneId;
   hideBubbles();
+
+  if (sceneId === "sala-mensa") {
+    startDiningDialogues();
+  } else {
+    stopDiningDialogues();
+  }
 
   if (sceneId === "sala-mensa" && diningCharacters.some((characterId) => !hasValidDiningSeat(characterId))) {
     randomizeDiningSeats();
