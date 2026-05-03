@@ -296,6 +296,25 @@ body {
   display: block;
 }
 
+.reception-character-slot {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 350ms ease;
+}
+
+.reception-character-slot.active {
+  opacity: 1;
+}
+
+.reception-character-slot.is-editor {
+  opacity: 0.35;
+  pointer-events: auto;
+}
+
+.reception-character-slot.active.is-editor {
+  opacity: 1;
+}
+
 .speech-bubble {
   position: absolute;
   z-index: 4;

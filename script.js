@@ -7,6 +7,7 @@ const navButtons = document.querySelectorAll(".scene-nav-button");
 const toggleEditorButton = document.getElementById("toggle-editor");
 const togglePreviewButton = document.getElementById("toggle-preview");
 const toggleTimeOfDayButton = document.getElementById("toggle-time-of-day");
+const testReceptionSlotButton = document.getElementById("test-reception-slot");
 const randomizeDiningSeatsButton = document.getElementById("randomize-dining-seats");
 const copyLayoutButton = document.getElementById("copy-layout");
 const seatAnchorElements = document.querySelectorAll(".seat-anchor");
@@ -84,6 +85,11 @@ const hotspotLayout = {
 };
 
 const characterLayout = {
+  reception: {
+    "reception-slot1": { left: 27.86, top: 0.99, width: 21.29, height: 63.01 },
+    "reception-slot2": { left: 48.41, top: 15.04, width: 17.45, height: 48.48 },
+    "reception-slot3": { left: 63.44, top: 4.26, width: 21.62, height: 58.82 }
+  },
   "sala-mensa": {
     nonnogianni: { left: 32.64, top: 34.24, width: 11.51, height: 18.76 },
     lauda: { left: 55.85, top: 34.24, width: 11.51, height: 18.76 },
@@ -313,10 +319,10 @@ function applySeatAnchorLayout(seatAnchor, layout) {
 function refreshCharacters() {
   for (const character of characters) {
     const isCurrentScene = character.dataset.scene === currentSceneId;
-    character.classList.toggle("is-visible", isCurrentScene);
     character.classList.toggle("is-editor", editorEnabled && isCurrentScene);
 
     if (!isCurrentScene) {
+      character.classList.remove("is-visible");
       continue;
     }
 
@@ -327,8 +333,61 @@ function refreshCharacters() {
       continue;
     }
 
+    const isReceptionCharacterSlot = character.classList.contains("reception-character-slot");
+    const shouldShow = isReceptionCharacterSlot
+      ? editorEnabled || character.classList.contains("active")
+      : true;
+
+    character.classList.toggle("is-visible", shouldShow);
     applyCharacterLayout(character, layout);
   }
+}
+
+function showReceptionCharacter(slotId, imageSrc, altText = "") {
+  const element = document.getElementById(`character-${slotId}`);
+
+  if (!element) {
+    return;
+  }
+
+  const image = element.querySelector("img");
+
+  if (!image) {
+    return;
+  }
+
+  image.src = imageSrc;
+  image.alt = altText;
+  element.classList.add("active");
+  element.setAttribute("aria-hidden", "false");
+  refreshCharacters();
+}
+
+function hideReceptionCharacter(slotId) {
+  const element = document.getElementById(`character-${slotId}`);
+
+  if (!element) {
+    return;
+  }
+
+  element.classList.remove("active");
+  element.setAttribute("aria-hidden", "true");
+  refreshCharacters();
+
+  window.setTimeout(() => {
+    const image = element.querySelector("img");
+
+    if (image && !element.classList.contains("active")) {
+      image.src = "";
+      image.alt = "";
+    }
+  }, 350);
+}
+
+function clearReceptionCharacters() {
+  hideReceptionCharacter("reception-slot1");
+  hideReceptionCharacter("reception-slot2");
+  hideReceptionCharacter("reception-slot3");
 }
 
 function hideBubbles() {
@@ -984,13 +1043,14 @@ function handleHotspotClick(event, hotspot) {
 }
 
 async function copyLayout() {
-  const json = JSON.stringify({
-    hotspotLayout,
-    characterLayout,
-    bubbleLayout,
-    seatAnchors,
-    characterSeats
-  }, null, 2);
+  const exportData = {
+    hotspotLayout: structuredClone(hotspotLayout),
+    characterLayout: structuredClone(characterLayout),
+    bubbleLayout: structuredClone(bubbleLayout),
+    seatAnchors: structuredClone(seatAnchors),
+    characterSeats: structuredClone(characterSeats)
+  };
+  const json = JSON.stringify(exportData, null, 2);
 
   try {
     await navigator.clipboard.writeText(json);
@@ -1090,6 +1150,13 @@ toggleTimeOfDayButton.addEventListener("click", () => {
   timeOfDay = timeOfDay === "day" ? "night" : "day";
   updateTimeOfDayButton();
   updateRoomBackground(currentSceneId);
+});
+
+testReceptionSlotButton.addEventListener("click", () => {
+  showReceptionCharacter("reception-slot1", "assets/characters/nonnogianni.png", "Nonno Gianni");
+  showReceptionCharacter("reception-slot2", "assets/characters/lauda.png", "Lauda");
+  showReceptionCharacter("reception-slot3", "assets/characters/sandra.png", "Sandra");
+  consoleOutput.textContent = "Slot reception di test attivati.";
 });
 
 randomizeDiningSeatsButton.addEventListener("click", () => {
